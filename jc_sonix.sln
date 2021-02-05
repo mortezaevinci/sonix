@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jc_sonix", "jc_sonix\jc_sonix.vcxproj", "{EE14FC5C-955E-42FE-B964-316A7B127BF4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug603|Win32 = Debug603|Win32
+		Debug603|x64 = Debug603|x64
+		Release603|Win32 = Release603|Win32
+		Release603|x64 = Release603|x64
+		release610_dll|Win32 = release610_dll|Win32
+		release610_dll|x64 = release610_dll|x64
+		release610_lib|Win32 = release610_lib|Win32
+		release610_lib|x64 = release610_lib|x64
+		release610|Win32 = release610|Win32
+		release610|x64 = release610|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Debug603|Win32.ActiveCfg = Debug603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Debug603|Win32.Build.0 = Debug603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Debug603|x64.ActiveCfg = Debug603|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Debug603|x64.Build.0 = Debug603|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Release603|Win32.ActiveCfg = Release603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Release603|Win32.Build.0 = Release603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Release603|x64.ActiveCfg = Release603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.Release603|x64.Build.0 = Release603|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_dll|Win32.ActiveCfg = release610_dll|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_dll|Win32.Build.0 = release610_dll|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_dll|x64.ActiveCfg = release610_dll|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_dll|x64.Build.0 = release610_dll|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_lib|Win32.ActiveCfg = release610_lib|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_lib|Win32.Build.0 = release610_lib|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_lib|x64.ActiveCfg = release610_lib|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610_lib|x64.Build.0 = release610_lib|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610|Win32.ActiveCfg = release610|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610|Win32.Build.0 = release610|Win32
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610|x64.ActiveCfg = release610|x64
+		{EE14FC5C-955E-42FE-B964-316A7B127BF4}.release610|x64.Build.0 = release610|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

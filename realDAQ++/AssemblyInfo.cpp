@@ -11,11 +11,11 @@ using namespace System::Security::Permissions;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly:AssemblyTitleAttribute("jc_sonix")];
+[assembly:AssemblyTitleAttribute("realDAQ++")];
 [assembly:AssemblyDescriptionAttribute("")];
 [assembly:AssemblyConfigurationAttribute("")];
 [assembly:AssemblyCompanyAttribute("")];
-[assembly:AssemblyProductAttribute("jc_sonix")];
+[assembly:AssemblyProductAttribute("realDAQ++")];
 [assembly:AssemblyCopyrightAttribute("Copyright (c)  2013")];
 [assembly:AssemblyTrademarkAttribute("")];
 [assembly:AssemblyCultureAttribute("")];

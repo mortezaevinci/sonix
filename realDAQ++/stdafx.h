@@ -9,6 +9,7 @@
 #include <daq.h>
 #include <daq_def.h>
 
+
 #ifndef DAQ_FIRMWARE_PATH
     #define DAQ_FIRMWARE_PATH "/fw/"
 #endif

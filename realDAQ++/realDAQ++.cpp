@@ -1,4 +1,3 @@
-// jc_sonix.cpp : main project file.
 
 // things needed to do in order to get this compile under visual studio 2010
 // 1. create a console project (not win32)
@@ -15,7 +14,8 @@
 // Seems sith the sdk, one first connects to a single device, then initializes it, does downloading of data, disconnect, then goes to next device
 //
 #include "stdafx.h"
-#include "jc_sonix.h"
+#include "realDAQ++.h"
+
 
 using namespace System;
 using namespace std; 
@@ -28,10 +28,10 @@ int removeTempFiles(const char *tempPath);
 // int argc, int** argv) // 
 int main(array<System::String ^> ^args)
 {
-	printf("realDAQ version .66\n\n");
-	printf("");
+	
 
     int  i = 0, retVal = 0;
+	int memMode=0;
     char m_firmwarePath[256] = DAQ_FIRMWARE_PATH;
     const char m_dataPath[256] = "";
     const char m_tempPath[256] = "";
@@ -45,6 +45,7 @@ int main(array<System::String ^> ^args)
     daqSequencePrms seqprms;
     bool sampling = SAMPLING;
     int const numChannls = 128;
+	unsigned int nAcq=1;
 	int sumTriggers = 0;  // if 0 output triggered data in stacked format, 1 = add triggered data before saving
 
     // sampling and decimation
@@ -77,12 +78,13 @@ int main(array<System::String ^> ^args)
     seqprms.divisor = 11;           // data size = 16GB / 2^divisor
     seqprms.externalTrigger = 0;
     seqprms.externalClock = 0;  // set to true if external clock is provided
+	seqprms.fixedTGC=1;
 
 	// lnaGain: LNA gain [0:1:2] corresponds to [16dB, 18dB, 21dB].
     // pgaGain: PGA gain [0:1:3] corresponds to [21dB, 24dB, 27dB, 30dB].
 	// biasCurrent: switch gain [0:1:7] where 0 completely turns off the switch
-    seqprms.lnaGain = 0;            // 16dB, 18dB, 21dB
-    seqprms.pgaGain = 0;            // 21dB, 24dB, 27dB, 30dB
+    seqprms.lnaGain = 2;            // 16dB, 18dB, 21dB
+    seqprms.pgaGain = 3;            // 21dB, 24dB, 27dB, 30dB
     seqprms.biasCurrent = 1;        // 0,1,2,...,7
 
 	// fixedTGC: defines whether the DAQ should use flat TGC or adjustable TGC.
@@ -90,7 +92,7 @@ int main(array<System::String ^> ^args)
 	// TGCcurve: If fixedTGC is set to be false, a TGC curve needs to be defined.
 	// Currently, this curve is defines by 3 points with X, Y values ranging from 0 to 1,
 	// where 1 corresponds to maximum value of TGC for Y and maximum acquisition depth for X.
-    seqprms.fixedTGC = 1;
+
     if (seqprms.fixedTGC == 1)
     {
         seqprms.fixedTGCLevel = 0;
@@ -109,6 +111,8 @@ int main(array<System::String ^> ^args)
 
 	// run command from command line
 	// http://msdn.microsoft.com/en-us/library/e3awe53k.aspx
+
+	
 
     String^ delimStr = "=";
     array<Char>^ delimiter = delimStr->ToCharArray( );
@@ -135,6 +139,7 @@ int main(array<System::String ^> ^args)
 			v = Int32::Parse(words[1]);
 			remote = v;
 		}
+
 		if(words[0]->CompareTo(L"acquire") == 0)
 		{
 			// NOTES:
@@ -155,21 +160,21 @@ int main(array<System::String ^> ^args)
 			{
 				//numTriggers += 1;
 			}
-            printf("bufferSize = %g\n", bufferSize);
-            printf("frameSize = %d\n", frameSize);
-            printf("numTriggers (computed) = %g\n", numFrames);
-            printf("numTriggers (used) = %d\n", numTriggers);
+            printv("bufferSize = %g\n", bufferSize);
+            printv("frameSize = %d\n", frameSize);
+            printv("numTriggers (computed) = %g\n", numFrames);
+            printv("numTriggers (used) = %d\n", numTriggers);
 			// ensure line duration is properly set
 			float lineDuration = (float)rlprms.numSamples / (float)40;
-            printf("lineDuration (expected) = %g\n", lineDuration);
+            printv("lineDuration (expected) = %g\n", lineDuration);
 			if(lineDuration > (float)rlprms.lineDuration)
 			{
 				rlprms.lineDuration = (int)(lineDuration) + (int)1;
-		        printf("lineDuration (fixed) = %g\n", (float)rlprms.lineDuration);
+		        printv("lineDuration (fixed) = %g\n", (float)rlprms.lineDuration);
 			}
 			else
 			{
-		        printf("lineDuration (ok) = %g\n", (float)rlprms.lineDuration);
+		        printv("lineDuration (ok) = %g\n", (float)rlprms.lineDuration);
 			}
 			if(numFrames >= 1)
 			{
@@ -178,26 +183,119 @@ int main(array<System::String ^> ^args)
 				{
 					for(remoteCount = 1; remoteCount <= 99999; remoteCount++)
 					{
-						acquireDAQ(v, rlprms, seqprms, numChannls, verbose, m_dataPath, m_tempPath, numTriggers, sumTriggers, remote, remoteCount, remotePath);
+
+						acquirenDAQ(nAcq, v, rlprms, seqprms, numChannls, verbose, m_dataPath, m_tempPath, numTriggers, sumTriggers, remote, remoteCount, remotePath,memMode);
 					}
 				}
 				else
 				{
-					acquireDAQ(v, rlprms, seqprms, numChannls, verbose, m_dataPath, m_tempPath, numTriggers, sumTriggers, remote, remoteCount, remotePath);
+
+					acquirenDAQ(nAcq, v, rlprms, seqprms, numChannls, verbose, m_dataPath, m_tempPath, numTriggers, sumTriggers, remote, remoteCount, remotePath,memMode);
 				}
 			}
 		}
+
+	
+			if(words[0]->CompareTo(L"stat") == 0)
+		{
+			// NOTES:
+			// if only a single trigger is used then, file size appears as 12bytes or 1k to windows even though correct size on disk
+			// eg 2048 pts and divisor of 15 -> daq returns after 1 trigger, but files are corrupt at 1k
+			// eg for divsor of 14, and 2048 samples -> windows reports 1/2 size of actual file after 2 triggers.
+			// cannot use the 2^x as a number of points
+			//
+			// if the numPoints*numchannels*2 is greater than n-7, where n = numchannels*numPoints*2, then file size fails
+
+			// test arguments
+			double div = (double)pow(2, (double)seqprms.divisor);
+			double bufferSize = (double)4*(double)4294967296/div;
+			int frameSize = rlprms.numSamples * numChannls * 2;
+			double numFrames = bufferSize/(double)frameSize;
+			int numTriggers = (int)numFrames;
+			if((double)numTriggers < numFrames)
+			{
+				//numTriggers += 1;
+			}
+
+if (words[1]->CompareTo(L"numTriggers")==0)
+printf("%d", numTriggers);
+
+else
+{
+
+
+            printv("bufferSize = %g\n", bufferSize);
+            printv("frameSize = %d\n", frameSize);
+            printv("numTriggers (computed) = %g\n", numFrames);
+            printv("numTriggers (used) = %d\n", numTriggers);
+			// ensure line duration is properly set
+			float lineDuration = (float)rlprms.numSamples / (float)40;
+            printv("lineDuration (expected) = %g\n", lineDuration);
+			if(lineDuration > (float)rlprms.lineDuration)
+			{
+				rlprms.lineDuration = (int)(lineDuration) + (int)1;
+		        printv("lineDuration (fixed) = %g\n", (float)rlprms.lineDuration);
+			}
+			else
+			{
+		        printv("lineDuration (ok) = %g\n", (float)rlprms.lineDuration);
+			}
+}
+		}
+
+	
+
+
 		if(words[0]->CompareTo(L"sum") == 0)
 		{
 			v = Int32::Parse(words[1]);
 			sumTriggers = v;
 		}
+
+		if(words[0]->CompareTo(L"nAcq") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			nAcq = v;
+		}
+
 		if(words[0]->CompareTo(L"stop") == 0)
 		{
 			v = Int32::Parse(words[1]);
 			stopDAQ(v);
  		}
+		if(words[0]->CompareTo(L"memMode") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			memMode=v;
+
+ 		}
 		// augment acquisition settings
+		if(words[0]->CompareTo(L"lnaGain") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			seqprms.lnaGain = v;  // line duration in micro seconds
+		}
+		if(words[0]->CompareTo(L"pgaGain") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			seqprms.pgaGain = v;  // line duration in micro seconds
+		}
+		if(words[0]->CompareTo(L"biasCurrent") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			seqprms.biasCurrent = v;  // line duration in micro seconds
+		}
+		if(words[0]->CompareTo(L"fixedTGC") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			seqprms.fixedTGC = v;  // line duration in micro seconds
+		}
+		if(words[0]->CompareTo(L"hpfBypass") == 0)
+		{
+			v = Int32::Parse(words[1]);
+			seqprms.hpfBypass = v;  // line duration in micro seconds
+		}
+
 		if(words[0]->CompareTo(L"lineDuration") == 0)
 		{
 			v = Int32::Parse(words[1]);
@@ -276,6 +374,8 @@ int main(array<System::String ^> ^args)
 		}
 	}
 
+	printv("\nrealDAQ++ version 0.70\n\n");
+
     return 0;
 }
 
@@ -284,24 +384,22 @@ bool initDAQ(int activeDAQ, const char *fw)
 {
     bool sampling = SAMPLING;
 	char err[256];
-    printf("initializing DAQ...\n");
+	printf("initializing DAQ #%d...\n",activeDAQ);
    
-	  if (daqIsInitializing())
+	  if (daqIsInitializing(activeDAQ))
     {
 		       daqStopInit();
-		fprintf(stderr,"DAQ was already initializing. It is being stopped now. \n");
+		fprintf(stderr,"Error: DAQ was already initializing. It is being stopped now. Please re-run. \n");
         return false;
     }
 
 	daqSetFirmwarePath(fw);
 
-
 	
-	//daqInit();	
 	
     if (!daqDriverInit())
     {
-        fprintf(stderr, "DAQ driver not initialized\n");
+        fprintf(stderr, "Error: DAQ driver not initialized\n");
         return false;
     }
     else
@@ -313,49 +411,68 @@ bool initDAQ(int activeDAQ, const char *fw)
    //     daqStopInit();
   //  }
 
-    if (daqIsConnected())
+    if (daqIsConnected(activeDAQ))
     {
 
-        printf("programming DAQ...\n");
+        printf("Programming DAQ...\n");
 
-     	   if (!daqInit())
+     	   if (!daqInit(0,activeDAQ))
         {
             daqGetLastError(err, 256);
+			printf("Error: Could not program DAQ.\n");
             fprintf(stderr, err);
             return false;
         }
 		
-        printf("finished programming DAQ module\n");
+        printf("Finished programming DAQ module\n");
     }
-   
+   daqReleaseMem(activeDAQ);
 
     return true;
 }
 
+
+bool acquirenDAQ(int n,int v, const daqRaylinePrms &rlprms, const daqSequencePrms &seqprms, int numChannls, int verbose, const char*m_dataPath, const char *m_tempPath, int numTriggers, int sumTriggers, int remote, int remoteCount, const char *remotePath, int memMode)
+{
+		printv("acquiring %d times.\n",n);
+
+	for(int i=0; i<n;i++)
+	{
+
+		printv("acquire number: %d\n",i);
+
+	acquireDAQ(v, rlprms, seqprms, numChannls, verbose, m_dataPath, m_tempPath, numTriggers, sumTriggers, remote, remoteCount, remotePath,i,memMode);
+	
+	}
+
+	return true;
+}
+
+
 // capture data
-bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePrms &seqprms, int numChannls, int verbose, const char*m_dataPath, const char *m_tempPath, int numTriggers, int sumTriggers, int remote, int remoteCount, const char *remotePath)
+bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePrms &seqprms, int numChannls, int verbose, const char*m_dataPath, const char *m_tempPath, int numTriggers, int sumTriggers, int remote, int remoteCount, const char *remotePath, int blockNum,int memMode)
 {
     char err[256];
-	int x=0, y=0, z=0, u=0, blockNum=0, arraySize=0;
+	int x=0, y=0, z=0, u=0, arraySize=0;
 	char fullRemotePath[256];
 	FILE *fid = NULL;
 	struct stat * buf;
 	int n = 0;
 
-    if (verbose)
-    {
-        printf("DAQ statistics:\n\n");
-        printf("line duration = %d micro sec\n", rlprms.lineDuration);
-        printf("number of channels = %d\n", numChannls);
-        printf("number of triggers = %d\n", numTriggers);
-        printf("samples per channel = %d\n", rlprms.numSamples);
-        printf("frame size = %d bytes\n", (rlprms.numSamples * numChannls * 2));
-    }
+	char fullDAQpath[256];
+	sprintf(fullDAQpath, "%s\\\\acq%05d\\\\", m_tempPath, blockNum);
+    
 
-	if(verbose == 1)
-	{
-		printf("Acquiring Data...\n");
-	}
+
+        printv("DAQ statistics:\n\n");
+        printv("line duration = %d micro sec\n", rlprms.lineDuration);
+        printv("number of channels = %d\n", numChannls);
+        printv("number of triggers = %d\n", numTriggers);
+        printv("samples per channel = %d\n", rlprms.numSamples);
+        printv("frame size = %d bytes\n", (rlprms.numSamples * numChannls * 2));
+		printv("Memory Mode is %d\n",memMode);
+		printv("Acquiring Data...\n");
+	
 
 	//  wait for command
 	if(remote == 1)
@@ -390,13 +507,39 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
 
 	// check that it is connected
 	
-	daqDriverInit();
-	
-	daqInit();
+
 
 	//	 printf("connected? %d   initialized? %d running? %d",daqIsConnected(),daqIsInitialized(),daqIsRunning());
 
-       if (!daqIsConnected())
+
+
+   if (!daqIsInitialized(activeDAQ))
+    {
+	
+        printv("The device driver is not initialized. Attempting to initialize. \n");
+		
+
+		daqDriverInit();
+
+	   // daqInit(activeDAQ);
+
+		daqTransferMode(memMode,activeDAQ);
+
+	//	daqReleaseMem(activeDAQ);
+		
+    }
+
+     if (!daqIsInitialized(activeDAQ))
+    {
+		if(verbose == 1)
+		{
+        fprintf(stderr, "Error: The device is not initialized!\n");
+
+		}
+        return false;
+    }
+
+    if (!daqIsConnected(activeDAQ))
     {
 		if(verbose == 1)
 		{
@@ -405,16 +548,7 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
         return false;
     }
 
-   if (!daqIsInitialized())
-    {
-		if(verbose == 1)
-		{
-        fprintf(stderr, "Error: The device is not initialized!\n");
-		}
-        return false;
-    }
-
-   if (daqIsRunning())
+   if (daqIsRunning(activeDAQ))
     {
 		if(verbose == 1)
 		{
@@ -423,7 +557,10 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
         return false;
     }
 
-    if (!daqRun(seqprms, rlprms))
+
+	   printv("daqrun in progress...\n");
+
+    if (!daqRun(seqprms, rlprms,activeDAQ))
     {
 		if(verbose == 1)
 		{
@@ -434,6 +571,7 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
         return false;
     }
 
+
     // tell labview that data has been captured
 	if(remote == 1)
 	{
@@ -442,7 +580,7 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
 		fid = fopen(fullRemotePath, "wb");
 		if(fid == NULL)
 		{
-		    printf("ERROR: Could not open path = %s\n", fullRemotePath);
+		    printf("Error: Could not open path = %s\n", fullRemotePath);
 			return false;
 		}
 		fwrite(&numTriggers, sizeof(int), 1, fid );
@@ -450,39 +588,42 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
 	}
 
 	// wait until done
-    printf("Running");
-	while(daqIsRunning())
+    printf("Running\n");
+	while(daqIsRunning(activeDAQ))
     {
-       	if(verbose == 1)
-		{
-		//	printf(".");
-		}
+       
     }
-    printf("\n");
 
+	clock_t trun0=clock();
+
+	
+	
 	// download data to folder
-    if (!daqDownload(m_tempPath))
+    if (!daqDownload(fullDAQpath,activeDAQ))
     {
 		if(verbose == 1)
 		{
-	//		daqGetLastError(err, 256);
-	//		fprintf(stderr, err);
+			daqGetLastError(err, 256);
+			fprintf(stderr, err);
 		}
-  //      return false;
+        return false;
     }
 
-    printf("Downloading");
-	while (daqIsDownloading())
+	   
+	printf("Downloading\n");
+
+	while (daqIsDownloading(activeDAQ))
     {
-       	if(verbose == 1)
-		{
-			printf(".");
-		}
+    printv(".");
+		
     }
     printf("\n");
 
-	// save data into a nice format, header + data for all channels
-    if (reshapeData(m_dataPath, m_tempPath, numTriggers, rlprms.numSamples, numChannls, sumTriggers, blockNum, x, y, z, u))
+	if (memMode==0)
+	{
+
+
+		if (reshapeData(m_dataPath, fullDAQpath, numTriggers, rlprms.numSamples, numChannls, sumTriggers, blockNum, x, y, z, u))
     {
 		if(verbose == 1)
 		{
@@ -491,12 +632,86 @@ bool acquireDAQ(int activeDAQ, const daqRaylinePrms &rlprms, const daqSequencePr
     }
 
 	// remove the temp files
-	removeTempFiles(m_tempPath);
+	//removeTempFiles(m_tempPath);
+
+	}
+	else
+	{
+		//into memory
+
+		int channel,frames,samples;
+		char channelIndex[128];
+		short* m_daqdata;
+
+		int* _buffer=new int[rlprms.numSamples];
+			writeBlock<int>(m_dataPath, numTriggers, rlprms.numSamples, numChannls, sumTriggers, blockNum, x, y, z, u);
+
+   for (int i = 0; i < numChannls; i++)
+        {
+            // read header
+            int* header = reinterpret_cast< int* >(daqGetDataPtr(i,activeDAQ));
+            try
+            {
+                if (header)
+                {
+                    channel = header[0];
+                    frames = header[1];
+                    samples = header[2];
+
+					printv("channel number=%u, frames=%u, samples=%u \n",channel,frames,samples);
+
+                    // read data
+                    short int* data = reinterpret_cast< short int* >(daqGetDataPtr(i,activeDAQ));
+                
+					printv("wirting DAQ data into file block...\n");
+
+				
+					    memcpy(reinterpret_cast< int* >(_buffer),
+                        reinterpret_cast< void* >(data), samples * sizeof(short int));
+       
+
+					writeBlock<int>(m_dataPath,_buffer, numTriggers, rlprms.numSamples, 1, 1, blockNum, x, y, z, u);
+   				
+
+					//   memcpy(reinterpret_cast< void* >(m_daqdata + (channelIndex[channel] * samples)),
+                 //       reinterpret_cast< void* >(data + DAQ_FILE_HEADER_SIZE_BYTES / sizeof(short int) + samples *
+                  //                                frame), samples * sizeof(short int));
+                }
+				else
+				{
+					printv("header not received from DAQ buffer.\n");
+				}
+            }
+
+			
+            catch (...)
+            {
+				printv("failed receiving data from DAQ buffer.\n");
+            }
+
+
+       }
+   				delete [] _buffer;
+	}
+
+
+
+		clock_t trun1=clock();
+	// save data into a nice format, header + data for all channels
+   
 
 	if(verbose == 1)
 	{
 	    printf("Acquisition Done!\n");
 	}
+
+	clock_t trun2=clock();
+
+	double elapsed0=double(trun1-trun0)/CLOCKS_PER_SEC;
+	double elapsed1=double(trun2-trun1)/CLOCKS_PER_SEC;
+
+	printf("daq time is %f seconds, process time is %f seconds.\n\n",elapsed0,elapsed1);
+
 
     return true;
 }
@@ -509,8 +724,8 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 	char fullPath[256] = "";
 	FILE *fid = NULL;
 	int n = 0;
-	int header[19];
-	int adjustedPoints = (numTriggers*numPoints)-32;
+	int header[3];
+	int adjustedPoints = (numTriggers*numPoints);
 	int sum=0;
 
 	// allocate space for the data
@@ -521,7 +736,7 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 	buffer = (short int *)malloc(bufferSize);
 	if(buffer == NULL)
 		{
-		    printf("ERROR: Could allocate the buffer\n");
+		    printf("Error: Could allocate the buffer\n");
 			return false;
 		}
 	memset(buffer, 0, bufferSize);
@@ -538,7 +753,7 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 	_buffer = (int *)malloc(_bufferSize);
 	if(_buffer == NULL)
 		{
-		    printf("ERROR: Could allocate the buffer\n");
+		    printf("Error: Could allocate the buffer\n");
 			return false;
 		}
 	memset(_buffer, 0, _bufferSize);
@@ -550,13 +765,13 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 		fid = fopen(fullPath, "rb");
 		if(fid == NULL)
 		{
-		    printf("ERROR: Could not open path = %s\n", fullPath);
+		    printf("Error: Could not open path = %s\n", fullPath);
 			return false;
 		}
-		n = fread( header, sizeof(int), 19, fid );
-		if(n != 19)
+		n = fread( header, sizeof(int), 3, fid );
+		if(n != 3)
 		{
-		    printf("ERROR: header too small for %s\n", fullPath);
+		    printf("Error: header too small for %s\n", fullPath);
 			return false;
 		}
 	/*	for(j=0; j < 19; j++)
@@ -568,7 +783,7 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 		n = fread( &buffer[i*numPoints*numTriggers], sizeof(short int), adjustedPoints, fid );
 		if(n != adjustedPoints)
 		{
-		    printf("ERROR: buffer[size of %d] read = %d not equal to %d for %s\n", bufferSize, n, adjustedPoints, fullPath);
+		    printf("Error: buffer[size of %d] read = %d not equal to %d for %s\n", bufferSize, n, adjustedPoints, fullPath);
 			//return false;
 		}
 		// printf("OK: loaded %s\n", fullPath);
@@ -595,32 +810,8 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 		fclose(fid);
 	}
 
-	// write output buffer to disk
-	sprintf(fullPath, "%s\\block%05d.dat", path, blockNum);
-	fid = fopen(fullPath, "wb");
-	if(fid == NULL)
-	{
-	    printf("ERROR: Could not open path = %s\n", fullPath);
-		return false;
-	}
-	fwrite(&blockNum, sizeof(int), 1, fid );
-	fwrite(&sumTriggers, sizeof(int), 1, fid );
-	fwrite(&numTriggers, sizeof(int), 1, fid );
-	fwrite(&numChannels, sizeof(int), 1, fid );
-	fwrite(&numPoints, sizeof(int), 1, fid );
-	fwrite(&x, sizeof(int), 1, fid );  // robot position in um
-	fwrite(&y, sizeof(int), 1, fid );
-	fwrite(&z, sizeof(int), 1, fid );
-	fwrite(&u, sizeof(int), 1, fid );  // robot angle in millidegrees
-	if(sumTriggers == 1)
-	{
-	fwrite(_buffer, 4*numPoints, numChannels, fid );
-	}
-	else
-	{
-	fwrite(_buffer, 4*numPoints*numTriggers, numChannels, fid );
-	}
-	fclose(fid);
+	writeBlock<int>(path, numTriggers, numPoints, numChannels, sumTriggers, blockNum, x, y, z, u);
+	writeBlock<int>(path,_buffer, numTriggers, numPoints, numChannels, sumTriggers, blockNum, x, y, z, u);
 
 	free(_buffer);
 	free(buffer);
@@ -630,26 +821,28 @@ bool reshapeData(const char *path, const char *tempPath, int numTriggers, int nu
 
 
 
+
+
 // store data to disk
 bool stopDAQ(int activeDAQ)
 {
-  if (daqIsInitializing())
+  if (daqIsInitializing(activeDAQ))
     {
-        daqStopInit();
+        daqStopInit(activeDAQ);
          fprintf(stdout,"Initialization cancelled");
         return true;
     }
 
-	if (daqIsDownloading())
+	if (daqIsDownloading(activeDAQ))
     {
-        daqStopDownload();
+        daqStopDownload(activeDAQ);
         fprintf(stdout,"Download cancelled");
         return true;
     }
 
-    if (daqIsRunning())
+    if (daqIsRunning(activeDAQ))
     {
-		daqStop();
+		daqStop(activeDAQ);
 	}
     fprintf(stdout, "DAQ stopped.\n");
     return true;
@@ -657,6 +850,7 @@ bool stopDAQ(int activeDAQ)
 
 bool listDAQs()
 {
+	printf("listing sonixDAQs...\n");
 	int i = 0, retVal = 0;
 	char device[256];
 	// get all daqs in the system, up to eight
@@ -665,6 +859,7 @@ bool listDAQs()
 		retVal = daqGetDeviceList(i, device, 256);
 		if(!retVal)
 		{
+			printf("Could not receive a response back\n");
 			break;
 		}
 		else
@@ -678,11 +873,9 @@ bool listDAQs()
 
 bool helpDAQ()
 {
-	Console::WriteLine(L"JC_SONIX HELP\n\n");
+	Console::WriteLine(L"realDAQ++ HELP\n\n");
 
-    Console::WriteLine(L"VERSION: 0.3\n\n");
-
-	Console::WriteLine(L"GENERAL:\n");
+ 	Console::WriteLine(L"GENERAL:\n");
 	Console::WriteLine(L" Use this command line program to communicate with Ultrasonix SonixDAQ.\n");
 	Console::WriteLine(L" Step 1. Use list to view all active DAQs on the system.\n");
 	Console::WriteLine(L" Step 2. Use init to initialize each DAQ by ID number.\n");
@@ -729,7 +922,7 @@ int removeTempFiles(const char *tempPath)
 		sprintf(fullPath, "%s\\CH%03d.daq", tempPath, i);
 		if (remove(fullPath) == -1)
 		{
-			printf("ERROR: Could not remove %s\n", fullPath);
+			printf("Error: Could not remove %s\n", fullPath);
 	    }
 	}
 	return 0;
